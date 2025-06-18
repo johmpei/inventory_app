@@ -4,6 +4,19 @@
     <meta charset="UTF-8">
     <title>在庫一覧</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+      /* 最低限、ボタン表示を整える */
+      .update-btn {
+          width: 2em;
+          font-size: 1.2em;
+          margin: 0 2px;
+      }
+      .button-group {
+          display: flex;
+          justify-content: center;
+          gap: 4px;
+      }
+    </style>
 </head>
 <body>
     <h1>カフェ在庫一覧</h1>
@@ -12,14 +25,31 @@
             <th>ID</th>
             <th>商品名</th>
             <th>在庫数</th>
+            <th>操作</th>
         </tr>
         {% for item in inventory_list %}
         <tr>
             <td>{{ item.id }}</td>
             <td>{{ item.name }}</td>
             <td>{{ item.quantity }}</td>
+            <td>
+                <div class="button-group">
+                    <form action="{{ url_for('update_quantity', item_id=item.id, action='minus') }}" method="post" style="display:inline;">
+                        <button class="update-btn" type="submit">−</button>
+                    </form>
+                    <form action="{{ url_for('update_quantity', item_id=item.id, action='plus') }}" method="post" style="display:inline;">
+                        <button class="update-btn" type="submit">＋</button>
+                    </form>
+                </div>
+            </td>
         </tr>
         {% endfor %}
     </table>
+
+    <a href="{{ url_for('add_item') }}" class="add-btn">商品を追加する</a>
+    <table>
+        <!-- 以下略 -->
+
+
 </body>
 </html>

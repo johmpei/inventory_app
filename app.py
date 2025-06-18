@@ -111,5 +111,41 @@ def index():
     inventory_list = get_inventory_list()
     return render_template('index.html', inventory_list=inventory_list)
 
+
+#在庫履歴操作履歴
+@app.route('/logs')
+def show_log():
+    conn = sqlite3.connect('inventory.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT 
+            log_inventory.id, 
+            log_inventory.time_log, 
+            users.name as user_name,
+            log_inventory.action,
+            log_inventory.quantity_change,
+            items.name as item_name
+        FROM log_inventory
+        LEFT JOIN users ON log_inventory.user_id = users.id
+        LEFT JOIN items ON log_inventory.item_id = items.id
+        ORDER BY log_inventory.time_log DESC
+        LIMIT 100
+    ''')
+    logs = cursor.fetchall()
+    conn.close()
+    log_list = []
+    for row in logs:
+        log_list.append({
+            'id': row[0],
+            'time_log': row[1],
+            'user_name': row[2],
+            'action': row[3],
+            'quantity_change': row[4],
+            'item_name': row[5],
+        })
+    return render_template('logs.html', log_list=log_list)
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)

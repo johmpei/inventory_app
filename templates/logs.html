@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>在庫操作履歴</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>在庫操作履歴</h1>
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>日時</th>
+            <th>ユーザー名</th>
+            <th>アクション</th>
+            <th>数量変化</th>
+            <th>商品名</th>   <!-- ここを商品ID→商品名に変更 -->
+        </tr>
+        {% for log in log_list %}
+        <tr>
+            <td>{{ log.id }}</td>
+            <td>{{ log.time_log }}</td>
+            <td>{{ log.user_name }}</td>
+            <td>{{ log.action }}</td>
+            <td>{{ log.quantity_change }}</td>
+            <td>{{ log.item_name }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <br>
+    <a href="{{ url_for('index') }}">在庫一覧へ戻る</a>
+</body>
+</html>

@@ -5,19 +5,41 @@ app = Flask(__name__)
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_item():
+    message = None
     if request.method == 'POST':
         name = request.form['name']
         quantity = int(request.form['quantity'])
-        # itemsに追加
         conn = sqlite3.connect('inventory.db')
         cursor = conn.cursor()
-        cursor.execute('INSERT INTO items (name) VALUES (?)', (name,))
-        item_id = cursor.lastrowid
-        cursor.execute('INSERT INTO inventory (item_id, quantity) VALUES (?, ?)', (item_id, quantity))
-        conn.commit()
-        conn.close()
-        return redirect(url_for('index'))
-    return render_template('add_item.html')
+
+        # 1. すでに同じ商品名があるかチェック
+        cursor.execute('SELECT id FROM items WHERE name = ?', (name,))
+        item = cursor.fetchone()
+        if item:
+            # 2. 既存アイテムなら在庫数を取得し加算
+            item_id = item[0]
+            cursor.execute('SELECT quantity FROM inventory WHERE item_id = ?', (item_id,))
+            inv = cursor.fetchone()
+            if inv:
+                current_quantity = inv[0]
+                new_quantity = current_quantity + quantity
+                cursor.execute('UPDATE inventory SET quantity = ? WHERE item_id = ?', (new_quantity, item_id))
+            else:
+                # 万一inventoryが空ならinsert
+                cursor.execute('INSERT INTO inventory (item_id, quantity) VALUES (?, ?)', (item_id, quantity))
+            conn.commit()
+            message = f'「{name}」は既にあるので在庫を{quantity}個加算しました。'
+            conn.close()
+            return redirect(url_for('index'))
+        else:
+            # 3. なければ新規追加
+            cursor.execute('INSERT INTO items (name) VALUES (?)', (name,))
+            item_id = cursor.lastrowid
+            cursor.execute('INSERT INTO inventory (item_id, quantity) VALUES (?, ?)', (item_id, quantity))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('index'))
+    return render_template('add_item.html', message=message)
 
 
 

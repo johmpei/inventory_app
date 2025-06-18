@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}在庫管理アプリ{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('index') }}">在庫一覧</a></li>
+                <li><a href="{{ url_for('show_log') }}">操作履歴</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        {% block content %}
+        #!ここにほかのHTMLがはさまる>
+        {% endblock %}
+    </main>
+</body>
+</html>

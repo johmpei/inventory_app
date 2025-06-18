@@ -1,19 +1,35 @@
+{% extends "base.html" %}
+{% block title %}在庫追加{% endblock %}
+{% block content %}
 
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>在庫追加</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <h1>在庫追加</h1>
+    <h1 style="margin-left: 36%;">在庫追加</h1>
     <form method="post">
-        <label>商品名: <input type="text" name="name" required></label><br><br>
-        <label>在庫数: <input type="number" name="quantity" required min="0"></label><br><br>
-        <button type="submit">追加</button>
+        <table>
+            <tr>
+                <th>商品名</th>
+                <td>
+                    <input type="text" name="name" required placeholder="例: コーヒー豆" style="width:90%;">
+                </td>
+            </tr>
+            <tr>
+                <th>在庫数</th>
+                <td>
+                    <input type="number" name="quantity" required min="0" placeholder="例: 10" style="width:90%;">
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="text-align:center; padding-top:18px;">
+                    <button type="submit" class="add-btn">追加</button>
+                </td>
+            </tr>
+        </table>
     </form>
-    <br>
-    <a href="{{ url_for('index') }}">一覧に戻る</a>
-</body>
-</html>
+
+    <!-- ここでボタンの上に余白をたっぷり入れる -->
+    <div style="height: 2.8em;"></div>
+
+
+        <a href="{{ url_for('index') }}" class="add-btn" style="margin-left: 65%;">一覧に戻る</a>
+    </div>
+
+{% endblock %}

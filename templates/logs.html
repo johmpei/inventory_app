@@ -1,12 +1,7 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>在庫操作履歴</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <h1>在庫操作履歴</h1>
+{% extends "base.html" %}
+
+{% block content %}
+    <h1  style="margin-left: 23%;">在庫操作履歴</h1>
     <table border="1">
         <tr>
             <th>ID</th>
@@ -28,6 +23,5 @@
         {% endfor %}
     </table>
     <br>
-    <a href="{{ url_for('index') }}">在庫一覧へ戻る</a>
-</body>
-</html>
+    <a href="{{ url_for('index') }}" class="add-btn" style="margin-left: 65%;">在庫一覧へ戻る</a>
+{% endblock %}

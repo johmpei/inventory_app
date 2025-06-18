@@ -50,6 +50,7 @@ def get_inventory_list():
         SELECT items.id, items.name, inventory.quantity
         FROM items
         LEFT JOIN inventory ON items.id = inventory.item_id
+        WHERE items.delete_flag = 0
         ORDER BY items.id
     ''')
     results = cursor.fetchall()
@@ -62,6 +63,19 @@ def get_inventory_list():
             'quantity': row[2] if row[2] is not None else 0
         })
     return inventory_list
+
+
+# 削除ボタンを作った
+@app.route('/delete/<int:item_id>', methods=['POST'])
+def delete_item(item_id):
+    conn = sqlite3.connect('inventory.db')
+    cursor = conn.cursor()
+    cursor.execute('UPDATE items SET delete_flag = 1 WHERE id = ?', (item_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('index'))
+
+
 
 # 在庫数を増減させるエンドポイント
 @app.route('/update_quantity/<int:item_id>/<action>', methods=['POST'])

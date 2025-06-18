@@ -5,7 +5,7 @@
     <title>在庫一覧</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-      /* 最低限、ボタン表示を整える */
+      /* ボタン用のスタイルはstyle.cssでOK */
       .update-btn {
           width: 2em;
           font-size: 1.2em;
@@ -26,6 +26,7 @@
             <th>商品名</th>
             <th>在庫数</th>
             <th>操作</th>
+            <th>削除</th>  <!-- 削除列追加 -->
         </tr>
         {% for item in inventory_list %}
         <tr>
@@ -42,14 +43,15 @@
                     </form>
                 </div>
             </td>
+            <td>
+                <form action="{{ url_for('delete_item', item_id=item.id) }}" method="post" style="display:inline;">
+                    <button class="delete-btn" type="submit" onclick="return confirm('本当に削除しますか？')">削除</button>
+                </form>
+            </td>
         </tr>
         {% endfor %}
     </table>
 
     <a href="{{ url_for('add_item') }}" class="add-btn">商品を追加する</a>
-    <table>
-        <!-- 以下略 -->
-
-
 </body>
 </html>

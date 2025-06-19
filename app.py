@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session
-import sqlite3
+import sqlite3, datetime
 
 
 app = Flask(__name__)
@@ -9,16 +9,16 @@ app.secret_key = 'happyicecream'  # 好きなランダムな文字列
 def add_item():
     message = None
     if request.method == 'POST':
-        name = request.form['name']
-        quantity = int(request.form['quantity'])
+        name = request.form['name']  # 入力された商品名を取得
+        quantity = int(request.form['quantity'])  # 入力された数量を取得（int型に変換）
         conn = sqlite3.connect('inventory.db')
         cursor = conn.cursor()
 
-        # 1. すでに同じ商品名があるかチェック
+        # すでに同じ商品名があるかチェック
         cursor.execute('SELECT id FROM items WHERE name = ?', (name,))
         item = cursor.fetchone()
         if item:
-            # 2. 既存アイテムなら在庫数を取得し加算
+            # 既存アイテムの場合：在庫を加算
             item_id = item[0]
             cursor.execute('SELECT quantity FROM inventory WHERE item_id = ?', (item_id,))
             inv = cursor.fetchone()
@@ -27,21 +27,92 @@ def add_item():
                 new_quantity = current_quantity + quantity
                 cursor.execute('UPDATE inventory SET quantity = ? WHERE item_id = ?', (new_quantity, item_id))
             else:
-                # 万一inventoryが空ならinsert
+                # inventoryテーブルにまだ登録がない場合は新規登録
                 cursor.execute('INSERT INTO inventory (item_id, quantity) VALUES (?, ?)', (item_id, quantity))
             conn.commit()
-            message = f'「{name}」は既にあるので在庫を{quantity}個加算しました。'
+            # --- 操作履歴に追加 ---
+            insert_log(
+                item_id=item_id,                # 商品ID
+                quantity_change=quantity,       # 追加した数量
+                action='add',                   # アクション名（例: 'add'）
+                user_id=session.get('user_id')  # 現在ログイン中のユーザーID
+            )
             conn.close()
             return redirect(url_for('index'))
         else:
-            # 3. なければ新規追加
+            # 新しい商品を追加
             cursor.execute('INSERT INTO items (name) VALUES (?)', (name,))
             item_id = cursor.lastrowid
             cursor.execute('INSERT INTO inventory (item_id, quantity) VALUES (?, ?)', (item_id, quantity))
             conn.commit()
+            # --- 操作履歴に追加 ---
+            insert_log(
+                item_id=item_id,
+                quantity_change=quantity,
+                action='add_new',               # 新規追加は区別したい場合
+                user_id=session.get('user_id')
+            )
             conn.close()
             return redirect(url_for('index'))
     return render_template('add_item.html', message=message)
+
+@app.route('/update_quantity/<int:item_id>/<action>', methods=['POST'])
+def update_quantity(item_id, action):
+    conn = sqlite3.connect('inventory.db')
+    cursor = conn.cursor()
+    # 現在の在庫数を取得
+    cursor.execute('SELECT quantity FROM inventory WHERE item_id = ?', (item_id,))
+    result = cursor.fetchone()
+    if result:
+        current_quantity = result[0]
+    else:
+        # 在庫データがなければ0で新規登録
+        current_quantity = 0
+        cursor.execute('INSERT INTO inventory (item_id, quantity) VALUES (?, ?)', (item_id, 0))
+        conn.commit()
+
+    # アクションごとに増減を計算
+    if action == 'plus':
+        new_quantity = current_quantity + 1
+        quantity_change = 1    # 1個増やす
+    elif action == 'minus':
+        new_quantity = max(current_quantity - 1, 0)
+        quantity_change = -1   # 1個減らす
+    else:
+        new_quantity = current_quantity
+        quantity_change = 0    # 変化なし
+
+    # 在庫数を更新
+    cursor.execute('UPDATE inventory SET quantity = ? WHERE item_id = ?', (new_quantity, item_id))
+    conn.commit()
+    conn.close()
+    # --- 操作履歴に追加 ---
+    insert_log(
+        item_id=item_id,                # 商品ID
+        quantity_change=quantity_change,# 増減数
+        action=action,                  # アクション名（'plus' or 'minus'）
+        user_id=session.get('user_id')  # ログインユーザーID
+    )
+    return redirect(url_for('index'))
+
+
+@app.route('/delete/<int:item_id>', methods=['POST'])
+def delete_item(item_id):
+    conn = sqlite3.connect('inventory.db')
+    cursor = conn.cursor()
+    # 削除フラグを立てる（実際のデータは消さない）
+    cursor.execute('UPDATE items SET delete_flag = 1 WHERE id = ?', (item_id,))
+    conn.commit()
+    conn.close()
+    # --- 操作履歴に追加 ---
+    insert_log(
+        item_id=item_id,                # 商品ID
+        quantity_change=0,              # 削除時は0で記録
+        action='delete',                # アクション名
+        user_id=session.get('user_id')  # ログインユーザーID
+    )
+    return redirect(url_for('index'))
+
 
 
 
@@ -67,46 +138,6 @@ def get_inventory_list():
     return inventory_list
 
 
-# 削除ボタンを作った
-@app.route('/delete/<int:item_id>', methods=['POST'])
-def delete_item(item_id):
-    conn = sqlite3.connect('inventory.db')
-    cursor = conn.cursor()
-    cursor.execute('UPDATE items SET delete_flag = 1 WHERE id = ?', (item_id,))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('index'))
-
-
-
-# 在庫数を増減させるエンドポイント
-@app.route('/update_quantity/<int:item_id>/<action>', methods=['POST'])
-def update_quantity(item_id, action):
-    conn = sqlite3.connect('inventory.db')
-    cursor = conn.cursor()
-    # まず現在の数量を取得
-    cursor.execute('SELECT quantity FROM inventory WHERE item_id = ?', (item_id,))
-    result = cursor.fetchone()
-    if result:
-        current_quantity = result[0]
-    else:
-        # inventoryにデータがなければ0として登録
-        current_quantity = 0
-        cursor.execute('INSERT INTO inventory (item_id, quantity) VALUES (?, ?)', (item_id, 0))
-        conn.commit()
-    
-    # 数量を増減
-    if action == 'plus':
-        new_quantity = current_quantity + 1
-    elif action == 'minus':
-        new_quantity = max(current_quantity - 1, 0)
-    else:
-        new_quantity = current_quantity  # 念のため
-
-    cursor.execute('UPDATE inventory SET quantity = ? WHERE item_id = ?', (new_quantity, item_id))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('index'))
 
 @app.route('/')
 def index():
@@ -199,6 +230,23 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+# 操作履歴（log_inventory）に新しいログを追加する関数
+def insert_log(item_id, quantity_change, action, user_id):
+    # データベースに接続
+    conn = sqlite3.connect('inventory.db')
+    cursor = conn.cursor()
+    # 現在時刻を「YYYY-MM-DD HH:MM:SS」形式で取得
+    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    # log_inventoryテーブルにログを追加
+    cursor.execute(
+        'INSERT INTO log_inventory (item_id, quantity_change, action, user_id, time_log) VALUES (?, ?, ?, ?, ?)',
+        (item_id, quantity_change, action, user_id, now)
+    )
+    # 変更を保存
+    conn.commit()
+    # データベース接続を閉じる
+    conn.close()
 
 
 if __name__ == '__main__':

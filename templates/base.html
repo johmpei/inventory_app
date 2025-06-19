@@ -6,14 +6,27 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <header>
-        <nav>
+<header>
+    <nav>
+        <div class="nav-top">
             <ul>
                 <li><a href="{{ url_for('index') }}">在庫一覧</a></li>
                 <li><a href="{{ url_for('show_log') }}">操作履歴</a></li>
             </ul>
-        </nav>
-    </header>
+        </div>
+        <div class="nav-user">
+            {% if session.get('user_name') %}
+                <span class="login-info">
+                    ログイン中: <span class="user-name">{{ session['user_name'] }}</span>
+                    <a href="{{ url_for('logout') }}" class="logout-link">ログアウト</a>
+                </span>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="logout-link">ログイン</a> 
+            {% endif %}
+        </div>
+    </nav>
+</header>
+
     <main>
         {% block content %}
         #!ここにほかのHTMLがはさまる>

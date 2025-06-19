@@ -156,3 +156,51 @@ table {
     margin: 0 auto 30px auto;
 }
 
+
+/* 上段（nav-top）は何も変えなくてOK */
+
+/* 下段を右寄せ＆控えめデザイン */
+.nav-user {
+    text-align: right;
+    margin-top: 3px;
+    margin-bottom: 3px;
+    padding-right: 16px;
+}
+
+.login-info {
+    font-size:1.23em;  /* 全体的に小さめ */
+    color: #444;
+    letter-spacing: 0.01em;
+}
+
+.user-name {
+    font-weight: 500;
+    color: #436285;
+    margin: 0 4px 0 4px;
+    font-size: 1em;  /* ユーザー名は他よりほんのり濃いめ程度 */
+}
+
+/* ログアウトをさらに控えめに・小さく */
+.logout-link {
+    /* nav a のボタンっぽい装飾をすべて打ち消す！ */
+    background: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    color: #888 !important;
+    font-size: 0.92em;
+    text-decoration: underline;
+    margin-left: 6px;
+    cursor: pointer;
+    font-weight: normal;
+    font-family: inherit;
+    transition: color 0.15s;
+    outline: none;
+    display: inline;
+}
+.logout-link:hover,
+.logout-link:focus {
+    color: #c44 !important;
+    text-decoration: underline;
+    outline: none;
+}

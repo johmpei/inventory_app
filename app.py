@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 
+
 app = Flask(__name__)
+app.secret_key = 'happyicecream'  # 好きなランダムな文字列
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_item():
@@ -145,6 +147,58 @@ def show_log():
         })
     return render_template('logs.html', log_list=log_list)
 
+
+#ユーザー登録画面
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    message = None
+    if request.method == 'POST':
+        name = request.form['name']
+        password = request.form['password']
+        role = request.form['role'] if 'role' in request.form else 'user'
+        conn = sqlite3.connect('inventory.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT id FROM users WHERE name = ?', (name,))
+        if cursor.fetchone():
+            message = 'このユーザー名は既に登録されています。'
+            conn.close()  # 重複を防ぐためここでクローズ
+        else:
+            cursor.execute(
+                'INSERT INTO users (name, password, role) VALUES (?, ?, ?)',
+                (name, password, role)
+            )
+            conn.commit()
+            conn.close()  # ここでクローズ
+            return redirect(url_for('login'))
+    return render_template('register.html', message=message)
+
+#login画面
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    message = None
+    if request.method == 'POST':
+        name = request.form['name']
+        password = request.form['password']
+        conn = sqlite3.connect('inventory.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT id, role FROM users WHERE name = ? AND password = ?', (name, password))
+        user = cursor.fetchone()
+        conn.close()
+        if user:
+            session['user_id'] = user[0]
+            session['user_name'] = name
+            session['role'] = user[1]
+            return redirect(url_for('index'))
+        else:
+            message = "ユーザー名またはパスワードが違います"
+    return render_template('login.html', message=message)
+
+
+#ログアウト
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 
 if __name__ == '__main__':

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta charset="UTF-8">
+    <title>ユーザー登録</title>
+</head>
+<body>
+    <h1>ユーザー登録</h1>
+    <form method="post">
+        <label>ユーザー名: <input type="text" name="name" required></label><br><br>
+        <label>パスワード: <input type="password" name="password" required></label><br><br>
+        <label>権限（ロール）:
+            <select name="role" required>
+                <option value="owner">オーナー</option>
+                <option value="staff">社員</option>
+                <option value="parttime">パート</option>
+                <option value="baito">アルバイト</option>
+            </select>
+        </label><br><br>
+        <button type="submit">登録</button>
+    </form>
+    <br>
+    <a href="{{ url_for('login') }}">ログインはこちら</a>
+</body>
+</html>

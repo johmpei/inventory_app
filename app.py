@@ -293,5 +293,11 @@ def insert_log(item_id, quantity_change, action, user_id):
     conn.close()
 
 
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template('404.html'), 404
+
+
 if __name__ == '__main__':
     app.run(debug=True)
+

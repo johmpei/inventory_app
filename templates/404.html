@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ページが見つかりません</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .notfound-container {
+            text-align: center;
+            margin-top: 120px;
+            color: #555;
+        }
+        .notfound-title {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+        }
+        .notfound-msg {
+            font-size: 1.2em;
+            margin-bottom: 40px;
+        }
+        .top-btn {
+            display: inline-block;
+            background: #1976d2;
+            color: #fff;
+            padding: 12px 32px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 1em;
+            transition: background 0.2s;
+            font-weight: 500;
+        }
+        .top-btn:hover {
+            background: #0d47a1;
+        }
+    </style>
+</head>
+<body>
+    <div class="notfound-container">
+        <div class="notfound-title">404 - ページが見つかりません</div>
+        <div class="notfound-msg">
+            アクセスしたページは存在しません。<br>
+            URLに誤りがないかご確認ください。
+        </div>
+        <a href="{{ url_for('index') }}" class="top-btn">在庫管理TOPに戻る</a>
+    </div>
+</body>
+</html>

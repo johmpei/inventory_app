@@ -7,6 +7,8 @@ app.secret_key = 'happyicecream'  # 好きなランダムな文字列
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_item():
+   if not is_logged_in():
+    return redirect(url_for('login'))
     message = None
     if request.method == 'POST':
         name = request.form['name']  # 入力された商品名を取得
@@ -58,6 +60,8 @@ def add_item():
 
 @app.route('/update_quantity/<int:item_id>/<action>', methods=['POST'])
 def update_quantity(item_id, action):
+    if not is_logged_in():
+       return redirect(url_for('login'))
     conn = sqlite3.connect('inventory.db')
     cursor = conn.cursor()
     # 現在の在庫数を取得
@@ -98,6 +102,8 @@ def update_quantity(item_id, action):
 
 @app.route('/delete/<int:item_id>', methods=['POST'])
 def delete_item(item_id):
+    if not is_logged_in():
+       return redirect(url_for('login'))
     conn = sqlite3.connect('inventory.db')
     cursor = conn.cursor()
     # 削除フラグを立てる（実際のデータは消さない）
@@ -117,6 +123,8 @@ def delete_item(item_id):
 
 
 def get_inventory_list():
+    if not is_logged_in():
+       return redirect(url_for('login'))
     conn = sqlite3.connect('inventory.db')
     cursor = conn.cursor()
     cursor.execute('''
@@ -137,10 +145,14 @@ def get_inventory_list():
         })
     return inventory_list
 
-
+def is_logged_in():
+    return 'user_id' in session
 
 @app.route('/')
 def index():
+    #loginしてなかったらログイン画面へ
+    if not is_logged_in():
+       return redirect(url_for('login'))
     inventory_list = get_inventory_list()
     return render_template('index.html', inventory_list=inventory_list)
 
@@ -148,6 +160,8 @@ def index():
 #在庫履歴操作履歴
 @app.route('/logs')
 def show_log():
+    if not is_logged_in():
+        return redirect(url_for('login'))
     conn = sqlite3.connect('inventory.db')
     cursor = conn.cursor()
     cursor.execute('''

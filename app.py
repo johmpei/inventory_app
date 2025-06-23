@@ -16,12 +16,14 @@ def add_item():
         conn = sqlite3.connect('inventory.db')
         cursor = conn.cursor()
 
-        # すでに同じ商品名があるかチェック
-        cursor.execute('SELECT id FROM items WHERE name = ?', (name,))
+        # まず「delete_flag=0（未削除）」で同名を探す
+        cursor.execute('SELECT id FROM items WHERE name = ? AND delete_flag = 0', (name,))
         item = cursor.fetchone()
+
         if item:
-            # 既存アイテムの場合：在庫を加算
+            # 既存で表示中の商品がある
             item_id = item[0]
+            # inventoryを更新（既存なら加算が基本だが、ここはお好みで）
             cursor.execute('SELECT quantity FROM inventory WHERE item_id = ?', (item_id,))
             inv = cursor.fetchone()
             if inv:
@@ -29,34 +31,54 @@ def add_item():
                 new_quantity = current_quantity + quantity
                 cursor.execute('UPDATE inventory SET quantity = ? WHERE item_id = ?', (new_quantity, item_id))
             else:
-                # inventoryテーブルにまだ登録がない場合は新規登録
                 cursor.execute('INSERT INTO inventory (item_id, quantity) VALUES (?, ?)', (item_id, quantity))
             conn.commit()
-            # --- 操作履歴に追加 ---
-            insert_log(
-                item_id=item_id,                # 商品ID
-                quantity_change=quantity,       # 追加した数量
-                action='add',                   # アクション名（例: 'add'）
-                user_id=session.get('user_id')  # 現在ログイン中のユーザーID
-            )
-            conn.close()
-            return redirect(url_for('index'))
-        else:
-            # 新しい商品を追加
-            cursor.execute('INSERT INTO items (name) VALUES (?)', (name,))
-            item_id = cursor.lastrowid
-            cursor.execute('INSERT INTO inventory (item_id, quantity) VALUES (?, ?)', (item_id, quantity))
-            conn.commit()
-            # --- 操作履歴に追加 ---
             insert_log(
                 item_id=item_id,
                 quantity_change=quantity,
-                action='add_new',               # 新規追加は区別したい場合
+                action='add',
                 user_id=session.get('user_id')
             )
             conn.close()
             return redirect(url_for('index'))
+        else:
+            # 論理削除済み商品があるかチェック
+            cursor.execute('SELECT id FROM items WHERE name = ? AND delete_flag = 1', (name,))
+            deleted_item = cursor.fetchone()
+            if deleted_item:
+                # 論理削除済みの商品を「復活」させる
+                item_id = deleted_item[0]
+                cursor.execute('UPDATE items SET delete_flag = 0 WHERE id = ?', (item_id,))
+                # 在庫もセット
+                cursor.execute('UPDATE inventory SET quantity = ? WHERE item_id = ?', (quantity, item_id))
+                conn.commit()
+                insert_log(
+                    item_id=item_id,
+                    quantity_change=quantity,
+                    action='restore_and_add',
+                    user_id=session.get('user_id')
+                )
+                conn.close()
+                return redirect(url_for('index'))
+            else:
+                # 完全新規商品
+                cursor.execute('INSERT INTO items (name) VALUES (?)', (name,))
+                item_id = cursor.lastrowid
+                cursor.execute('INSERT INTO inventory (item_id, quantity) VALUES (?, ?)', (item_id, quantity))
+                conn.commit()
+                insert_log(
+                    item_id=item_id,
+                    quantity_change=quantity,
+                    action='add_new',
+                    user_id=session.get('user_id')
+                )
+                conn.close()
+                return redirect(url_for('index'))
     return render_template('add_item.html', message=message)
+
+
+
+
 
 @app.route('/update_quantity/<int:item_id>/<action>', methods=['POST'])
 def update_quantity(item_id, action):

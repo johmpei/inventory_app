@@ -7,8 +7,8 @@ app.secret_key = 'happyicecream'  # 好きなランダムな文字列
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_item():
-   if not is_logged_in():
-    return redirect(url_for('login'))
+    if not is_logged_in():
+        return redirect(url_for('login'))
     message = None
     if request.method == 'POST':
         name = request.form['name']  # 入力された商品名を取得
@@ -61,7 +61,7 @@ def add_item():
 @app.route('/update_quantity/<int:item_id>/<action>', methods=['POST'])
 def update_quantity(item_id, action):
     if not is_logged_in():
-       return redirect(url_for('login'))
+        return redirect(url_for('login'))
     conn = sqlite3.connect('inventory.db')
     cursor = conn.cursor()
     # 現在の在庫数を取得
@@ -103,7 +103,7 @@ def update_quantity(item_id, action):
 @app.route('/delete/<int:item_id>', methods=['POST'])
 def delete_item(item_id):
     if not is_logged_in():
-       return redirect(url_for('login'))
+        return redirect(url_for('login'))
     conn = sqlite3.connect('inventory.db')
     cursor = conn.cursor()
     # 削除フラグを立てる（実際のデータは消さない）
@@ -124,7 +124,7 @@ def delete_item(item_id):
 
 def get_inventory_list():
     if not is_logged_in():
-       return redirect(url_for('login'))
+        return redirect(url_for('login'))
     conn = sqlite3.connect('inventory.db')
     cursor = conn.cursor()
     cursor.execute('''
@@ -152,7 +152,7 @@ def is_logged_in():
 def index():
     #loginしてなかったらログイン画面へ
     if not is_logged_in():
-       return redirect(url_for('login'))
+        return redirect(url_for('login'))
     inventory_list = get_inventory_list()
     return render_template('index.html', inventory_list=inventory_list)
 
@@ -196,30 +196,38 @@ def show_log():
 #ユーザー登録画面
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if not is_logged_in():
+        return redirect(url_for('login'))
+    # 「owner」か「staff」以外はTOPへ戻す
+    if session.get('role') not in ['owner', 'staff']:
+        return redirect(url_for('index'))  # または「権限がありません」画面でもOK
     message = None
     if request.method == 'POST':
         name = request.form['name']
         password = request.form['password']
-        role = request.form['role'] if 'role' in request.form else 'user'
+        role = request.form['role'] if 'role' in request.form else 'parttime'
         conn = sqlite3.connect('inventory.db')
         cursor = conn.cursor()
         cursor.execute('SELECT id FROM users WHERE name = ?', (name,))
         if cursor.fetchone():
             message = 'このユーザー名は既に登録されています。'
-            conn.close()  # 重複を防ぐためここでクローズ
+            conn.close()
         else:
             cursor.execute(
                 'INSERT INTO users (name, password, role) VALUES (?, ?, ?)',
                 (name, password, role)
             )
             conn.commit()
-            conn.close()  # ここでクローズ
-            return redirect(url_for('login'))
+            conn.close()
+            return redirect(url_for('index'))
     return render_template('register.html', message=message)
+
 
 #login画面
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if is_logged_in():  # ←追加（ログイン済みなら/にリダイレクト）
+        return redirect(url_for('index'))
     message = None
     if request.method == 'POST':
         name = request.form['name']

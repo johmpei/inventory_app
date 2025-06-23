@@ -204,3 +204,15 @@ table {
     text-decoration: underline;
     outline: none;
 }
+.register-link {
+    color: #888;         /* 薄いグレー */
+    font-size: 0.95em;   /* やや小さめ */
+    font-weight: 300;    /* 細字 */
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    transition: color 0.2s;
+}
+.register-link:hover {
+    color: #333;         /* マウスを当てた時のみ少し濃く */
+    text-decoration: underline;
+}

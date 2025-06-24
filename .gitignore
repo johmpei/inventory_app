@@ -1,2 +1,2 @@
-inventory.db
+#inventory.db
 git rm --cached inventory.db

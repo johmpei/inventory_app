@@ -3,7 +3,9 @@ import sqlite3, datetime
 
 
 app = Flask(__name__)
-app.secret_key = 'happyicecream'  # 好きなランダムな文字列
+import os
+app.secret_key = os.environ.get("SECRET_KEY", "devkey_for_localtest")
+
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_item():
